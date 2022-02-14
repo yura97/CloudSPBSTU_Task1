@@ -135,6 +135,8 @@ sudo netplan apply
 1. Наиболее простой способ с текущей конфигурацией, это разрешить переброс пакетов ip в нашем gateway
 ```shell
 echo 1 | sudo tee /proc/sys/net/ipv4/ip_forward 1
+
+ nano /etc/sysctl.conf # Также можно добавить 1 в файл для автозагрузки
 ```
 Таким образом виртуальные машины А и С будут видеть друг друга в сети
 2. Чтобы разрешить переброс только конкретных пакетов по конкретному порту, следуюет настроить маршрут [следующим образом](https://www.digitalocean.com/community/tutorials/how-to-forward-ports-through-a-linux-gateway-with-iptables):
@@ -146,6 +148,12 @@ iptables -A FORWARD -i eth1 -o eth0 -m conntrack --ctstate ESTABLISHED,RELATED -
 
 iptables -P FORWARD DROP
 
+```
+Также необходимо сохранить правила iptables
+```shell
+sudo apt-get install iptables-persistent
+sudo iptables-save > /etc/iptables/rules.v4
+sudo ip6tables-save > /etc/iptables/rules.v6
 ```
 3. Посмотреть трафик можно [с помощью](https://unix.stackexchange.com/questions/313180/iptables-forward-chain-traffic-not-seen-by-tcpdump)
 
@@ -171,9 +179,30 @@ app.run(host='0.0.0.0', port=5000)
 ```shell
 python app.py
 ```
+5. С помощью systemd необходимо создать сервис, который запускает скрипт через автозагрузку
+```shell
+nano /lib/systemd/system/web-server.service
+```
+Вставить следующее содержимое в файл:
+```ini
+[Unit]
+Description=Web-Server
+[Service]
+Type=idle
+WorkingDirectory=/home/user/server/
+ExecStart=python app.py
+[Install]
+WantedBy=multi-user.target
+```
+Перезапустить службы и активировать автозагрузку
+```shell
+systemctl daemon-reload
+systemctl enable web-server
+```
 ### Веб-клиент (Машина С)
 1. Чтобы послать запрос на машину А, необходимо ввести следующую команду:
 ```shell
 curl 'http://192.168.<день рождения>.10:5000/
 ```
 2. Если поменять на сервере порт отличный от 5000 и попробовать отправить запрос, шлюз не должен пропустить пакеты
+
