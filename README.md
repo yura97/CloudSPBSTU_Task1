@@ -8,7 +8,7 @@
 1.	Развернуть три виртуальные машины Linux, согласно схеме ниже
 
 
-![info](./assets/images/Schema.png)
+![info](Linux%20Practice.png)
 
 
 2.	Linux A
