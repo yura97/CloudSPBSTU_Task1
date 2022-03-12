@@ -133,6 +133,12 @@
 
 ![info](Assets/Screenshots/17.png)
 
+Разрешим переброс пакетов ip в нашем gateway с помощью команды
+
+``` $ echo 1 | sudo tee /proc/sys/net/ipv4/ip_forward 1 ```
+
+И для автоматического конфигурирования разкоментируем строчку отвечающую за это в файле /etc/sysctl.conf
+
 Для контроля поступающих запросов используем tcpdump
 
 ``` $ sudo tcpdump -i enp0s8 icmp ```
@@ -168,6 +174,17 @@
 запрос приходит, но обычные пинги не пропускаются
 
 ![info](Assets/Screenshots/15.png)
+
+С помощью systemd необходимо создадим сервис, который запускает скрипт через автозагрузку
+
+``` $ sudo nano /lib/systemd/system/web-server.service ```
+
+![info](Assets/Screenshots/19.png)
+
+Перезапустим службы и активировать автозагрузку
+
+``` systemctl daemon-reload ```
+``` systemctl enable web-server ```
 
 10. Скачаем файл с виртуальной машины.
 
