@@ -6,7 +6,9 @@
 
 2. Далее переименуем *hostname* на *ivanchevserver* следующим образом:
 
-``` $ sudo hostnamectl set-hostname ivanchev_server ```
+```shell
+ $ sudo hostnamectl set-hostname ivanchev_server 
+```
 
 ![info](Assets/Screenshots/4.png)
 
@@ -26,8 +28,6 @@
 
 ``` $ sudo apt update ```
 
-![info](Assets/Screenshots/5.png)
-
 
 Установим SSH с помощью команды:
 ``` $ sudo apt-get install ssh```
@@ -38,13 +38,15 @@
 
 Добавим пакет SSH-сервера в автозагрузку:
 
-``` $ sudo apt install openssh-server -y ```
+```shell
+ $ sudo apt install openssh-server -y 
 
-``` $ systemctl enable ssh ```
+ $ systemctl enable ssh 
 
-``` $ systemctl start ssh ```
+ $ systemctl start ssh 
 
-``` $ systemctl status ssh ```
+ $ systemctl status ssh 
+ ```
 
 ![info](Assets/Screenshots/8.png)
 
@@ -61,7 +63,9 @@
 
 6. Следующим образом подключаемся к виртуальной машине по SSH 
 
-``` $ ssh -p 4221 ivanchev_1@localhost ```
+```shell
+$ ssh -p 4221 ivanchev_1@localhost 
+```
 
 ![info](Assets/Screenshots/7.png)
 
@@ -109,85 +113,206 @@
 
 ![info](Assets/Screenshots/13.png)
 
-Для нашего шлюза мы создадим 2 интерфейса.
+Для шлюза мы создадим 2 интерфейса.
 
 
 8. Перейдем к насторойке firewall с помощью iptables
 
 Команда для пропуска пакетов через порт 5000
 
-``` $ sudo iptables -A FORWARD -i enp0s9 -o enp0s8 -p tcp --syn --dport 5000 -m conntrack --ctstate NEW -j ACCEPT ```
+```shell
+$ sudo iptables -A FORWARD -i enp0s9 -o enp0s8 -p tcp --syn --dport 5000 -m conntrack --ctstate NEW -j ACCEPT 
+```
 
-Команды для блокирования всех остальных пакетов
+Команды для пробрасывания пакетов
 
-``` $ sudo iptables -A FORWARD -i enp0s8 -o enp0s9 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT ```
-``` $ sudo iptables -A FORWARD -i enp0s9 -o enp0s8 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT ```
-``` $ sudo iptables -P FORWARD DROP ```
+```shell
+$ sudo iptables -A FORWARD -i enp0s8 -o enp0s9 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT 
+$ sudo iptables -A FORWARD -i enp0s9 -o enp0s8 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+```
 
-Сохранение полученные правила
+Команда для блокирования всех остальных пакетов
 
-``` $ sudo apt-get install iptables-persistent ```
-``` $ sudo netfilter-persistent save ```
+```shell
+$ sudo iptables -P FORWARD DROP 
+```
+
+Сохраненим полученные правила
+
+```shell 
+$ sudo apt-get install iptables-persistent 
+$ sudo netfilter-persistent save 
+```
 
 Вот что получилось
 
-![info](Assets/Screenshots/17.png)
+![info](Assets/Screenshots/23.png)
 
 Разрешим переброс пакетов ip в нашем gateway с помощью команды
 
-``` $ echo 1 | sudo tee /proc/sys/net/ipv4/ip_forward 1 ```
+```shell
+$ echo 1 | sudo tee /proc/sys/net/ipv4/ip_forward 1 
+```
 
 И для автоматического конфигурирования разкоментируем строчку отвечающую за это в файле /etc/sysctl.conf
 
+sudo nano /etc/sysctl.conf
+
+![info](Assets/Screenshots/24.png)
+
 Для контроля поступающих запросов используем tcpdump
 
-``` $ sudo tcpdump -i enp0s8 icmp ```
+```shell
+$ sudo tcpdump -i enp0s8 icmp 
+```
 
-если хочу проверять запросы от клиента то надо поменять на enp0s9
+Если хочу проверять запросы от клиента то надо поменять на enp0s9
 
+Также можно проверять не только icmp пакеты (которые отправляются при команде ping), но и tcp заменив icmp на tcp.
 
 Пинганул к шлюзу - пинганулся, к клиенту не пинганулся, значит все верно
 
 ![info](Assets/Screenshots/14.png)
 
-
 9. Создадим http сервер
 
 Используем для этого flask
 
-``` $ sudo apt install python3-pip ```
-``` $ pip install flask ```
+```shell
+ $ sudo apt install python3-pip 
+ $ pip install flask 
+```
 
 Создадим директорию для сервера
 
-``` $ sudo mkdir /server ```
+```shell
+ $ sudo mkdir /server 
+ $ cd /server 
+ ```
 
-``` $ cd /server ```
-
-И создадим что-то для тестирования http запросов
+И создадим в файле app.py ендпойнты для тестирования http запросов
 
 Запустим сервер
 
-``` $ python3 app.py ```
+```shell
+$ python3 app.py 
+```
 
 Если клиент отправляет следующую команду ``` $ curl -X POST http://192.168.5.10:5000/ ```, то
 запрос приходит, но обычные пинги не пропускаются
 
 ![info](Assets/Screenshots/15.png)
 
-С помощью systemd необходимо создадим сервис, который запускает скрипт через автозагрузку
+P.S. Проснулся и решил, что пора делать сервер не на этом мини тестовом фласке, а загрузить приложение, которое я разработал на шарпах.
+
+Начал с переноса сборки на сервеную машину
+
+```shell
+$ scp -P 4221 -r ./publish/ ivanchev_1@localhost:/home/ivanchev_1/server
+```
+
+Затем установил сдк (не без проблем)
+
+```shell
+$ sudo snap install dotnet-sdk --classic --channel=5.0
+```
+
+Теперь можно запускать с помощью следующей команды
+
+```shell
+$ dotnet RestApi.dll
+```
+
+На самом деле нельзя, потому что не установлен postgres который нужен для работы приложения
+
+```shell
+$ sudo apt-get install wget ca-certificates
+$ wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+$ sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main" >> /etc/apt/sources.list.d/pgdg.list'
+$ sudo apt-get update
+$ sudo apt-get install postgresql postgresql-contrib
+```
+
+Но не все так просто, ведь далее при попытке запустить дллку с сервером, возникала ошибка. Смотря на все мои записи команд я не могу точно восстановить что я делал, но для начала я проверил что мое приложение правда создала бд и пользователя к нему. 
+
+```shell
+$ pgrep -u postgres -fa -- -D
+$ sed -n 4p /var/lib/postgresql/14/main/postmaster.pid
+```
+
+Информация совпадает, порт тоже.
+
+Решил запустить сам сервер
+
+```shell
+$ pg_lsclusters
+$ sudo systemctl start postgresql@14-main
+```
+
+И зайдя как пользователь постгреса посмотрел информацию
+
+```shell
+$ sudo -i -u postgres
+# psql
+# \conninfo
+```
+
+В информации не было ничего что я бы не знал
+
+С помощью следующей команды я смог не каждый раз запускать приложение, а проверять могу ли я подключится к серверу сам. 
+
+```shell
+$ psql -U postgres -d studentdb -h 127.0.0.1 -W
+```
+
+Главная проблема в том, что мое приложение само создает бд и подключает к ней пользователя по паролю. Но ошибка выводила, что пароль не подходит, и я просто отбросил то, что проблема правда с паролями. Много чего пытался: так как решил что проблема с адресами и портами тыкался в netplanе попутно меняя настройки моего приложения через appsettings.json. Даже попытался присоеденить внешнюю виндовскую посгрес базу, но все тсчетно, поэтому вернул все.
+
+Решил что пора менять пароль на сервере (кажется вот это гений, но там было правда непонятно)
+
+```shell
+$ sudo -i -u postgres
+$ psql -c "ALTER USER postgres WITH PASSWORD '1111'" -d studentdb
+```
+
+Ура, это все решило, и сервер наконец-то заработал
+
+![info](Assets/Screenshots/20.png)
+![info](Assets/Screenshots/21.png)
+
+Но запросы не доходили. И проблема была не только в том что я не аплайнул netplan после его модификации для установки дотнетовского сдк, и даже не в нашем шлюзе (хотя он всегда был виновником этого).
+
+После некоторых тестов я понял что приложение было настроено на адрес https://localhost:5001. Я изменил код проги чтобы порт был 5000, но проблема оказалась в подключенном мной редиректом на безопасное подлючение, который я тоже вырубил. Чтож теперь запросы с сервера на сервер приходили, но все же с клиента они не добирались. Ну в общем дело было в том что я использовал localhost, поэтому я снова пересобрал прогу только теперь с адресом 0.0.0.0. 
+
+![info](Assets/Screenshots/27.png)
+
+Теперь все настроено и работает
+
+![info](Assets/Screenshots/22.png)
+
+
+Далее с помощью systemd необходимо создадим сервис, который запускает скрипт через автозагрузку
 
 ``` $ sudo nano /lib/systemd/system/web-server.service ```
 
-![info](Assets/Screenshots/19.png)
+![info](Assets/Screenshots/25.png)
 
 Перезапустим службы и активировать автозагрузку
 
-``` systemctl daemon-reload ```
-``` systemctl enable web-server ```
+```shell 
+$ sudo systemctl daemon-reload
+$ sudo systemctl start web-server
+$ sudo systemctl enable web-server
+$ sudo systemctl status web-server
+```
+
+![info](Assets/Screenshots/26.png)
+
+Теперь можно просто включать виртуальную машину сервера, и от нее будут поступать ответы
 
 10. Скачаем файл с виртуальной машины.
 
-``` $ scp -P 4221 ivanchev_1@localhost:/server/app.py app.py ```
+```shell 
+$ scp -P 4221 ivanchev_1@localhost:/server/app.py app.py 
 
-``` $ scp -P 4221 ivanchev_1@localhost:/etc/netplan/00-installer-config.yaml 00-installer-config.yaml ```
+$ scp -P 4221 ivanchev_1@localhost:/etc/netplan/00-installer-config.yaml 00-installer-config.yaml 
+```
