@@ -311,6 +311,9 @@ bash testReuests.sh
 
 ![info](Assets/Screenshots/32.png)
 
+Переименовал файл из-за опечатки.
+
+![info](Assets/Screenshots/rename.png)
 
 Далее с помощью systemd необходимо создадим сервис, который запускает скрипт через автозагрузку
 
