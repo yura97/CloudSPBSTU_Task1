@@ -203,6 +203,10 @@ $ python3 app.py
 
 ![info](Assets/Screenshots/15.png)
 
+Или разница в отправлении запроса на порт 5000 и на порт 5001
+
+![info](Assets/Screenshots/30.png)
+
 P.S. Проснулся и решил, что пора делать сервер не на этом мини тестовом фласке, а загрузить приложение, которое я разработал на шарпах.
 
 Начал с переноса сборки на сервеную машину
@@ -289,6 +293,24 @@ $ psql -c "ALTER USER postgres WITH PASSWORD '1111'" -d studentdb
 
 ![info](Assets/Screenshots/22.png)
 
+Для работы с базой данных для каждой из сущностей (студент, лектор, лекция, домашняя работа) есть CRUD операции. Для проверки запросов создадим файл testReuests.sh c GET POST PUT DELETE запросами
+
+```shell
+cd /home/ivanchev_3
+sudo nano testReuests.sh
+```
+
+```shell
+sudo chmod +x testReuests.sh
+bash testReuests.sh
+```
+
+![info](Assets/Screenshots/31.png)
+
+При выпонении файла выводятся (в json формате) сначала все лекторы, далее лексторы с четвертым новым лектором, далее с модифицированным первым лектором и далее с удаленным четвертым.
+
+![info](Assets/Screenshots/32.png)
+
 
 Далее с помощью systemd необходимо создадим сервис, который запускает скрипт через автозагрузку
 
@@ -316,3 +338,7 @@ $ scp -P 4221 ivanchev_1@localhost:/server/app.py app.py
 
 $ scp -P 4221 ivanchev_1@localhost:/etc/netplan/00-installer-config.yaml 00-installer-config.yaml 
 ```
+
+P.S. Пересобрал приложение на линукс. Теперь файл запускается так: ``` $ ./RestApi ```, поэтому и поменял и файл автозапуска.
+
+![info](Assets/Screenshots/33.png)
